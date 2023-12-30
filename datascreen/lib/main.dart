@@ -4,9 +4,52 @@
 
 import 'dart:async';
 
+import 'package:datascreen/list_of_mountains.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+class Mountain{
+  Mountain({required this.name, required this.meters, required this.info, required this.location});
+  static Mountain fromJson(dynamic input){
+
+      final n = input["name"];
+      final m = input["met"];
+      final i = input["inf"];
+      final l = input["loc"];
+
+      if(n is String && m is int && i is String && l is String){
+        var ret =  Mountain(name: n, meters: m, info: i, location: l);
+      
+        return ret;
+      }else
+      {
+        
+        var ret =  Mountain(name: "", meters: 0, info: "", location: "");
+        return ret;
+      }
+
+  }
+
+  @override
+  String toString(){
+    return "$name at $meters m, info: $info | $location";
+  }
+
+  String name = "";
+  int meters = 0;
+  String info = "";
+  String location = "";
+}
+
+void clearAndCreateVector() async {
+  for(int i = 0; i < 1600; i++){
+    var t = mountainsJson[i];
+    final r = Mountain.fromJson(t);
+    print(r);
+  }
+}
+
+void main() async {
+  clearAndCreateVector();
   runApp(const MyApp());
 }
 
