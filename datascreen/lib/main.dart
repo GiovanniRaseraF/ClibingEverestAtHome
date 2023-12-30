@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:datascreen/list_of_mountains.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class Mountain{
@@ -40,16 +41,42 @@ class Mountain{
   String location = "";
 }
 
+List<Mountain> mountains = [];
+
+Mountain closestTo(List<Mountain> m, int meters){
+  Mountain closest = m[0];
+
+  for(int i = 0; i < m.length; i++){
+    Mountain actual = m[i];
+    if(actual.meters == 0) continue;
+
+    int distance = actual.meters - meters;
+
+    if(distance >= 0){
+      // sono sotto
+      if(actual.meters - meters < (closest.meters - meters)){
+        closest = actual;
+      }
+    }
+  }
+
+  return closest;
+}
+
 void clearAndCreateVector() async {
   for(int i = 0; i < 1600; i++){
     var t = mountainsJson[i];
     final r = Mountain.fromJson(t);
-    print(r);
+
+    mountains.add(r);
   }
 }
 
 void main() async {
   clearAndCreateVector();
+
+  print("We have: ${mountains.length} mountains");
+
   runApp(const MyApp());
 }
 
@@ -79,22 +106,36 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  double _counter = 0;
+  double _stairs = 0;
   Stopwatch _stopwatch = Stopwatch();
   late Timer timer;
   bool startStop = true;
   String elapsedTime = '';
+  Mountain closest = closestTo(mountains, 0);
+
+  @override void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    setState(() {
+      closest = closestTo(mountains, 0);
+    });
+  }
 
   void _incrementCounter() {
     setState(() {
-     _counter++;
+     _stairs+=1;
+     closest = closestTo(mountains,(_stairs*3) as int);
+     print(closest);
     });
   }
   
   void _decrementCounter() {
     setState(() {
-      if(_counter > 0){
-        _counter--;
+      if(_stairs > 0){
+        _stairs--;
+        closest = closestTo(mountains,(_stairs*3) as int);
+        print(closest);
       }
     });
   }
@@ -109,14 +150,14 @@ class _MyHomePageState extends State<MyHomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children:[
                 Text('Piani: ', style: Theme.of(context).textTheme.headlineMedium,),
-                Text('$_counter', style: Theme.of(context).textTheme.headlineMedium,),
+                Text('$_stairs', style: Theme.of(context).textTheme.headlineMedium,),
               ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children:[
                 Text('Scalati: ', style: Theme.of(context).textTheme.headlineMedium,),
-                Text('${_counter * 3} m, ${_counter * 3 / 1000} km', style: Theme.of(context).textTheme.headlineMedium,),
+                Text('${_stairs * 3} m, ${_stairs * 3 / 1000} km', style: Theme.of(context).textTheme.headlineMedium,),
               ],
             ),
             Row(
@@ -124,6 +165,13 @@ class _MyHomePageState extends State<MyHomePage> {
               children:[
                 Text('Tempo: ', style: Theme.of(context).textTheme.headlineMedium,),
                 Text('${elapsedTime}', style: Theme.of(context).textTheme.headlineMedium,),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children:[
+                Text('Obiettivo: ', style: Theme.of(context).textTheme.headlineMedium,),
+                Text('${closest}', style: Theme.of(context).textTheme.headlineSmall,),
               ],
             ),
             Divider(height: 100),
@@ -173,7 +221,6 @@ class _MyHomePageState extends State<MyHomePage> {
   updateTime(Timer timer) {
     if (_stopwatch.isRunning) {
       setState(() {
-        print("startstop Inside=$startStop");
         elapsedTime = transformMilliSeconds(_stopwatch.elapsedMilliseconds);
       });
     }
