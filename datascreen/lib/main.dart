@@ -106,12 +106,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  double _stairs = 0;
+  int _stairs = 0;
   Stopwatch _stopwatch = Stopwatch();
   late Timer timer;
   bool startStop = true;
   String elapsedTime = '';
   Mountain closest = closestTo(mountains, 0);
+
+  // Data
+  double _step_height = 0.17; // in meters
+  int _number_of_steps = 18;
 
   @override void initState() {
     // TODO: implement initState
@@ -120,6 +124,10 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       closest = closestTo(mountains, 0);
     });
+  }
+
+  double totalHeightCalc(int stairs){
+    return stairs * _number_of_steps * _step_height;
   }
 
   void _incrementCounter() {
@@ -157,7 +165,7 @@ class _MyHomePageState extends State<MyHomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children:[
                 Text('Scalati: ', style: Theme.of(context).textTheme.headlineMedium,),
-                Text('${_stairs * 3} m, ${_stairs * 3 / 1000} km', style: Theme.of(context).textTheme.headlineMedium,),
+                Text('${totalHeightCalc(_stairs).toStringAsFixed(1)} m, ${(totalHeightCalc(_stairs) / 1000).toStringAsFixed(3)} km', style: Theme.of(context).textTheme.headlineMedium,),
               ],
             ),
             Row(
