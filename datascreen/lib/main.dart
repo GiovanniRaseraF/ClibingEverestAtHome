@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:datascreen/list_of_mountains.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Mountain{
   Mountain({required this.name, required this.meters, required this.info, required this.location});
@@ -72,16 +73,23 @@ void clearAndCreateVector() async {
   }
 }
 
+late SharedPreferences g_prefs;
+
 void main() async {
+  // Load last info
+  g_prefs = await SharedPreferences.getInstance();
+
   clearAndCreateVector();
 
   print("We have: ${mountains.length} mountains");
 
-  runApp(const MyApp());
+  runApp(MyApp(prefs: g_prefs,));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key, required this.prefs});
+
+  SharedPreferences prefs;
 
   // This widget is the root of your application.
   @override
@@ -92,14 +100,47 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorSchemeSeed: Colors.blue
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Flutter Demo Home Page', prefs: prefs),
     );
   }
 }
 
+class DataStore {
+  DataStore({required this.prefs}){}
+  SharedPreferences prefs;
+  final String STAIRS_KEY = "STAIRS_KEY";
+
+  void reset(){
+    setCurrentStairs(0);
+  }
+
+  int getCurrentStairs(){
+    int? res = prefs.getInt(STAIRS_KEY);
+
+    if (res == null){
+      setCurrentStairs(0);
+      return 0;
+    }else{
+      return res;
+    }
+  }
+
+  void setCurrentStairs(int? newStairs){
+    if (newStairs == null){
+      print("Warn: cannot save newStemps is null");
+    }else{
+      prefs.setInt(STAIRS_KEY, newStairs);
+    }
+  }
+}
+
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  MyHomePage({super.key, required this.title, required this.prefs}){
+    ds = DataStore(prefs: prefs);
+  }
   final String title;
+  SharedPreferences prefs;
+  late DataStore ds;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -120,9 +161,11 @@ class _MyHomePageState extends State<MyHomePage> {
   @override void initState() {
     // TODO: implement initState
     super.initState();
+    
+    _stairs = widget.ds.getCurrentStairs();
 
     setState(() {
-      closest = closestTo(mountains, 0);
+      closest = closestTo(mountains, _stairs);
     });
   }
 
@@ -133,8 +176,10 @@ class _MyHomePageState extends State<MyHomePage> {
   void _incrementCounter() {
     setState(() {
      _stairs+=1;
-     closest = closestTo(mountains,(_stairs*3) as int);
+     widget.ds.setCurrentStairs(_stairs);
+     closest = closestTo(mountains,(totalHeightCalc(_stairs).floor()).toInt());
      print(closest);
+
     });
   }
   
@@ -142,7 +187,8 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       if(_stairs > 0){
         _stairs--;
-        closest = closestTo(mountains,(_stairs*3) as int);
+        widget.ds.setCurrentStairs(_stairs);
+        closest = closestTo(mountains,(totalHeightCalc(_stairs).floor()).toInt());
         print(closest);
       }
     });
@@ -268,7 +314,7 @@ class _MyHomePageState extends State<MyHomePage> {
     String secondsStr = (seconds % 60).toString().padLeft(2, '0');
     String hundredsStr = (hundreds % 100).toString().padLeft(2, '0');
 
-    return "$hoursStr:$minutesStr:$secondsStr:$hundredsStr";
+    return "$hoursStr:$minutesStr:$secondsStr"; //:$hundredsStr";
   }
 
   // https://stackoverflow.com/a/57441158
