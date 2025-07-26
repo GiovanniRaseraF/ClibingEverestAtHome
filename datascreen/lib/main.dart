@@ -172,6 +172,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Stopwatch _stopwatch = Stopwatch();
   late Timer timer;
   bool startStop = true;
+  int last_save = 0;
   String elapsedTime = '';
   Mountain closest = closestTo(mountains, 0);
 
@@ -185,6 +186,7 @@ class _MyHomePageState extends State<MyHomePage> {
     
     _stairs = widget.ds.getCurrentStairs();
     _initial_offset_millis = widget.ds.getCurrentMillis();
+    setTime();
 
     setState(() {
       closest = closestTo(mountains, _stairs);
@@ -325,14 +327,11 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  int last_save = 0;
   setTime() {
     var timeSoFar = _initial_offset_millis + _stopwatch.elapsedMilliseconds;
     setState(() {
       elapsedTime = transformMilliSeconds(timeSoFar);
     });
-
-    
   }
 
   transformMilliSeconds(int milliseconds) {
