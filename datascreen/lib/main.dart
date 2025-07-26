@@ -109,6 +109,7 @@ class DataStore {
   DataStore({required this.prefs}){}
   SharedPreferences prefs;
   final String STAIRS_KEY = "STAIRS_KEY";
+  final String MILLISECONDS_KEY = "MILLISECONDS_KEY";
 
   void reset(){
     setCurrentStairs(0);
@@ -132,6 +133,25 @@ class DataStore {
       prefs.setInt(STAIRS_KEY, newStairs);
     }
   }
+  
+  int getCurrentMillis(){
+    int? res = prefs.getInt(MILLISECONDS_KEY);
+
+    if (res == null){
+      setCurrentMillis(0);
+      return 0;
+    }else{
+      return res;
+    }
+  }
+
+  void setCurrentMillis(int? newMillis){
+    if (newMillis== null){
+      print("Warn: cannot save newMillis is null");
+    }else{
+      prefs.setInt(MILLISECONDS_KEY, newMillis);
+    }
+  }
 }
 
 class MyHomePage extends StatefulWidget {
@@ -148,6 +168,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _stairs = 0;
+  int _initial_offset_millis = 0;
   Stopwatch _stopwatch = Stopwatch();
   late Timer timer;
   bool startStop = true;
@@ -163,6 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     
     _stairs = widget.ds.getCurrentStairs();
+    _initial_offset_millis = widget.ds.getCurrentMillis();
 
     setState(() {
       closest = closestTo(mountains, _stairs);
@@ -274,9 +296,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   updateTime(Timer timer) {
     if (_stopwatch.isRunning) {
+      int timeSoFar = _initial_offset_millis + _stopwatch.elapsedMilliseconds;
       setState(() {
-        elapsedTime = transformMilliSeconds(_stopwatch.elapsedMilliseconds);
+        elapsedTime = transformMilliSeconds(timeSoFar);
       });
+      if (timeSoFar - last_save >= 1000){
+        last_save = timeSoFar;
+        widget.ds.setCurrentMillis(timeSoFar);
+      }
     }
   }
 
@@ -291,16 +318,21 @@ class _MyHomePageState extends State<MyHomePage> {
   stopWatch() {
     setState(() {
       startStop = true;
+      widget.ds.setCurrentMillis(_initial_offset_millis + _stopwatch.elapsedMilliseconds);
+      _initial_offset_millis = widget.ds.getCurrentMillis();
       _stopwatch.stop();
       setTime();
     });
   }
 
+  int last_save = 0;
   setTime() {
-    var timeSoFar = _stopwatch.elapsedMilliseconds;
+    var timeSoFar = _initial_offset_millis + _stopwatch.elapsedMilliseconds;
     setState(() {
       elapsedTime = transformMilliSeconds(timeSoFar);
     });
+
+    
   }
 
   transformMilliSeconds(int milliseconds) {
